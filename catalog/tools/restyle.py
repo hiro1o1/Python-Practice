@@ -56,6 +56,9 @@ OPENER_HERO = {}
 NEXT_PAGE_PHOTO = {5: ("Line-up of 4K AI smartboards", "smartboards-classroom.png",
                        "4K AI smartboards on mobile stands in a classroom")}
 PHOTOS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "photos")
+# Pages after an opener that get a new product cut-out in the same box: base page -> (picture, file).
+NEXT_PAGE_CUTOUT = {12: ("Wall-mounted advertising display, front", "wall-mounted-display.png",
+                         "Wall-mounted advertising display, front view")}
 NEXT_PAGE_SWAP = {17: ("Portable smart Android TV on a mobile", (18, "HS Series product render"))}
 FONT_FILES = [os.path.expanduser("~/.fonts/SegoeUI-Semibold-subset.ttf"),
               os.path.expanduser("~/.fonts/SegoeUI-subset.ttf")]
@@ -529,6 +532,19 @@ def main(src, dst):
         slide = prs.slides[page - 1]
         old = next(sh for sh in slide.shapes if sh.shape_type == 13 and sh.name.startswith(name))
         place_photo(slide, old, os.path.join(PHOTOS, fname), descr)
+    for page, (name, fname, descr) in NEXT_PAGE_CUTOUT.items():
+        slide = prs.slides[page - 1]
+        old = next(sh for sh in slide.shapes if sh.shape_type == 13 and sh.name.startswith(name))
+        path = os.path.join(PHOTOS, fname)
+        iw, ih = Image.open(path).size
+        sc = min(old.width / iw, old.height / ih)
+        w, h = int(iw * sc), int(ih * sc)
+        pic = slide.shapes.add_picture(path, old.left + (old.width - w) // 2, old.top + (old.height - h) // 2, w, h)
+        pic.name = descr
+        pic._element.find(".//" + qn("p:cNvPr")).set("descr", descr)
+        set_effect(pic._element.spPr, shadow(10, 8, 40))
+        old._element.addprevious(pic._element)
+        old._element.getparent().remove(old._element)
     for page, (name, (src_page, src_name)) in NEXT_PAGE_SWAP.items():
         target = next(sh for sh in prs.slides[page - 1].shapes if sh.shape_type == 13 and sh.name.startswith(name))
         source = next(sh for sh in prs.slides[src_page - 1].shapes if sh.shape_type == 13 and sh.name.startswith(src_name))

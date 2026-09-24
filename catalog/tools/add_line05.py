@@ -348,14 +348,21 @@ def pc_pages(prs, kit):
         pg.clone(kit.card_value, x + 17, 62.5, 36, 9, text=t)
         pg.clone(kit.card_note, x + 5, 76, 47, 18, text=d)
     pg.clone(kit.label, 16, 104, 178, 4, text="On the shop floor")
-    pg.picture("pc-uc-shelf.jpg", 16, 110, 114, 56, "Wall-mounted price checker next to a shelf", fit=False,
-               rounded=True, shadow=(12, 5, 20))
-    pg.picture("pc-uc-shopper.jpg", 134, 110, 60, 56, "Shopper checking a product price", fit=False,
-               rounded=True, shadow=(12, 5, 20))
-    pg.clone(kit.spec_value, 16, 169, 114, 7, text="Wall-mounted by the shelf")
-    pg.clone(kit.card_note, 16, 176, 114, 6, text="Promotions and product details right where shoppers decide.")
-    pg.clone(kit.spec_value, 134, 169, 60, 7, text="Self-service checks")
-    pg.clone(kit.card_note, 134, 176, 60, 6, text="Less waiting, more shopping time.")
+    # three tiles sized to each photo's own shape (equal height, no cropping)
+    H = 42.6
+    tiles = [("pc-uc-restock.jpg", 1.912, "Staff restocking shelves", "Next to the shelves",
+              "Promotions and details where shoppers decide."),
+             ("pc-uc-wall.jpg", 1.029, "Price checker mounted on a store wall", "Wall-mounted",
+              "Fixed with the included wall bracket."),
+             ("pc-uc-shopper.jpg", 1.047, "Shopper checking a product", "Self-service checks",
+              "Less waiting, more shopping time.")]
+    x = 16
+    for f, ratio, alt, title, note in tiles:
+        w = H * ratio
+        pg.picture(f, x, 110, w, H, alt, fit=False, rounded=True, shadow=(12, 5, 20))
+        pg.clone(kit.spec_value, x, 110 + H + 3, w, 7, text=title)
+        pg.clone(kit.card_note, x, 110 + H + 10.5, w, 10, text=note)
+        x += w + 4
     pg.clone(kit.label, 16, 190, 178, 4, text="For the store team")
     cards(pg, kit, [("Promotions", "Buy-two-get-one and spend-and-save rules, member prices, points and coupons.", "capital"),
                     ("Product details", "Ingredients, usage and origin: ideal for electronics, cosmetics and baby products.", "monitor"),
@@ -568,6 +575,34 @@ def portfolio(prs, first, last):
             sh._element.getparent().remove(sh._element)
 
 
+def swap_production_photo(prs):
+    """Production page: replace the black floor-standing photo with the factory photo, filling the same box."""
+    s = by_title(prs, "Production by Product Line")
+    old = next(sh for sh in s.shapes if sh.shape_type == 13 and sh.name.startswith("Black floor-standing"))
+    path = os.path.join(PHOTOS, "factory-signage-floorstanding.jpg")
+    iw, ih = Image.open(path).size
+    pic = s.shapes.add_picture(path, old.left, old.top, old.width, old.height)
+    box, img = old.width / old.height, iw / ih
+    if img > box:
+        c = (1 - box / img) / 2
+        pic.crop_left = pic.crop_right = c
+    else:  # taller photo: trim mostly ceiling, keep the floor and stands
+        c = 1 - img / box
+        pic.crop_top, pic.crop_bottom = c * 0.8, c * 0.2
+    pic.name = "Floor-standing advertising displays in production"
+    pic._element.find(".//" + qn("p:cNvPr")).set("descr", pic.name)
+    for tag in ("a:prstGeom", "a:effectLst"):  # same rounded corners and shadow as before
+        src = old._element.spPr.find(qn(tag))
+        dst = pic._element.spPr.find(qn(tag))
+        if src is not None:
+            if dst is not None:
+                pic._element.spPr.replace(dst, copy.deepcopy(src))
+            else:
+                pic._element.spPr.append(copy.deepcopy(src))
+    old._element.addprevious(pic._element)
+    old._element.getparent().remove(old._element)
+
+
 # --------------------------------------------------------------------------- main
 def main(src, dst):
     prs = Presentation(src)
@@ -594,6 +629,7 @@ def main(src, dst):
             if f.get("type") == "slidenum":
                 f.find(qn("a:t")).text = str(i)
     portfolio(prs, pos, pos + 6)
+    swap_production_photo(prs)
     prs.save(dst)
     print("saved", dst, len(prs.slides), "pages; line 05 on pages", pos, "to", pos + 6)
 

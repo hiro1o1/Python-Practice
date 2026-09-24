@@ -29,8 +29,8 @@ AFTER_TITLE = "Bar Type and OLED Displays"
 TITLE = '10.1" Self-service Price Checker'
 SUBTITLE = "Barcode price checker for retail  ·  Model XYC-CJ-D5"
 PICTURES = [  # (file, alt text, caption)
-    ("price-checker-front-TEMP.png", "10.1 inch self-service price checker, front view", "Front view"),
-    ("price-checker-side-TEMP.png", "10.1 inch self-service price checker, side view", "Side view  ·  wall-mounted"),
+    ("price-checker-front.png", "10.1 inch self-service price checker, front view", "Front view"),
+    ("price-checker-scanner.png", "10.1 inch self-service price checker, scanner window", "Scanner window"),
 ]
 CARDS = [  # (value, note, icon)
     ('10.1"', "IPS, 1280 × 800", "monitor"),

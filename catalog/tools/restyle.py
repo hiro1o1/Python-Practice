@@ -344,6 +344,95 @@ def build_production_page(prs):
     return slide
 
 
+# --------------------------------------------------------------------------- image clean-up
+def _defringe(rgba):
+    """Pull edge colours from the opaque interior and trim the 1 px white fringe."""
+    import cv2
+    import numpy as np
+    a = rgba[..., 3].astype(np.float32)
+    rgb = rgba[..., :3].astype(np.float32)
+    solid = (a >= 250).astype(np.float32)
+    edge = (a > 0) & (a < 250)
+    if edge.any() and solid.any():
+        fill = rgb.copy()
+        for k in (3, 7, 15):
+            num = cv2.GaussianBlur(rgb * solid[..., None], (0, 0), k)
+            den = cv2.GaussianBlur(solid, (0, 0), k)[..., None]
+            est = num / np.maximum(den, 1e-4)
+            need = edge & (den[..., 0] > 0.02)
+            fill[need] = est[need]
+            edge = edge & ~need
+        rgb = np.where(((a > 0) & (a < 250))[..., None], fill, rgb)
+    a = cv2.erode(a, np.ones((3, 3), np.uint8))
+    a = cv2.GaussianBlur(a, (0, 0), 0.6)
+    return np.dstack([np.clip(rgb, 0, 255), a]).astype(np.uint8)
+
+
+def _knock_out_white(rgb):
+    """White/near-white background connected to the border -> transparent (soft for light shadows)."""
+    import cv2
+    import numpy as np
+    x = rgb.astype(np.int32)
+    w = x.min(-1)
+    sat = x.max(-1) - x.min(-1)
+    cand = ((w >= 247) & (sat < 10)).astype(np.uint8)
+    n, lab = cv2.connectedComponents(cand)
+    border = set(np.unique(np.r_[lab[0], lab[-1], lab[:, 0], lab[:, -1]])) - {0}
+    bg = np.isin(lab, list(border))
+    alpha = np.full(w.shape, 255.0)
+    alpha[bg] = np.clip((253 - w[bg]) / 6.0, 0, 1) * 255
+    return _defringe(np.dstack([rgb, alpha.astype(np.uint8)]))
+
+
+def clean_images(prs):
+    """Make white-background product shots real cut-outs and defringe existing cut-outs."""
+    import numpy as np
+    done = {}
+    for slide in prs.slides:
+        for sh in list(slide.shapes):
+            if sh.shape_type != 13 or sh.name.startswith(("Glow", "Icon")):
+                continue
+            blip = sh._element.blipFill.blip
+            part = slide.part.related_part(blip.rEmbed)
+            key = part.partname
+            if key not in done:
+                im = Image.open(io.BytesIO(part.blob))
+                arr = np.asarray(im.convert("RGBA"))
+                corners = [arr[0, 0], arr[0, -1], arr[-1, 0], arr[-1, -1]]
+                out = None
+                if im.mode == "RGBA" and arr[..., 3].min() < 200:
+                    out = _defringe(arr)
+                elif all(c[3] == 255 and c[:3].min() > 225 for c in corners):
+                    out = _knock_out_white(arr[..., :3])
+                if out is not None:
+                    buf = io.BytesIO()
+                    Image.fromarray(out, "RGBA").save(buf, "PNG", optimize=True)
+                    done[key] = buf.getvalue()
+                else:
+                    done[key] = None
+            if done[key] is not None:
+                _, rid = slide.part.get_or_add_image_part(io.BytesIO(done[key]))
+                blip.set(qn("r:embed"), rid)
+
+
+def fit_in_panels(slide):
+    """Keep product pictures inside the white card they sit on (3 mm clearance)."""
+    panels = [s for s in slide.shapes if s.name in ("Image panel", "Series stage")]
+    for sh in slide.shapes:
+        if sh.shape_type != 13 or sh.name.startswith(("Glow", "Icon")):
+            continue
+        cx = sh.left + sh.width // 2
+        panel = next((p for p in panels if p.left <= cx <= p.left + p.width
+                      and p.top <= sh.top < p.top + p.height), None)
+        if panel is None:
+            continue
+        limit = panel.top + panel.height - Mm(3)
+        if sh.top + sh.height > limit:
+            k = (limit - sh.top) / sh.height
+            nw, nh = int(sh.width * k), int(sh.height * k)
+            sh.left, sh.width, sh.height = cx - nw // 2, nw, nh
+
+
 def page_title(slide):
     for sh in slide.shapes:
         if sh.name == "Page title":
@@ -521,6 +610,9 @@ def main(src, dst):
         if any(sh.name.startswith("Email") for sh in contact_slide.shapes) else "Admin@xyc-ltd.com"
     contact = f"{email.strip()}  ·  {phone.strip()}"
 
+    clean_images(prs)
+    for slide in prs.slides:
+        fit_in_panels(slide)
     # Restyle existing pages first (dark: cover and contact).
     for si, slide in enumerate(prs.slides, 1):
         restyle_slide(slide, si, n0, dark=si in (1, n0))

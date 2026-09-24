@@ -411,8 +411,11 @@ def clean_images(prs):
                 else:
                     done[key] = None
             if done[key] is not None:
+                old = blip.rEmbed
                 _, rid = slide.part.get_or_add_image_part(io.BytesIO(done[key]))
                 blip.set(qn("r:embed"), rid)
+                if old != rid and f'"{old}"' not in etree.tostring(slide._element).decode():
+                    slide.part.drop_rel(old)
 
 
 def fit_in_panels(slide):

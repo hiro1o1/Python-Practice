@@ -51,6 +51,11 @@ CTA_TITLE = "Request a quote or an OEM/ODM version"
 OPENER_HERO = {}
 # The page after an opener shows a different picture of the same product, so
 # the opener's hero is not repeated: base page -> (picture to replace, (page, source picture)).
+# New photos for pages after an opener: base page -> (picture to replace, file in catalog/photos).
+# The photo fills the page's product stage.
+NEXT_PAGE_PHOTO = {5: ("Line-up of 4K AI smartboards", "smartboards-classroom.png",
+                       "4K AI smartboards on mobile stands in a classroom")}
+PHOTOS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "photos")
 NEXT_PAGE_SWAP = {17: ("Portable smart Android TV on a mobile", (18, "HS Series product render"))}
 FONT_FILES = [os.path.expanduser("~/.fonts/SegoeUI-Semibold-subset.ttf"),
               os.path.expanduser("~/.fonts/SegoeUI-subset.ttf")]
@@ -262,6 +267,32 @@ def swap_picture(target, source):
     target.name = source.name
 
 
+def place_photo(slide, old, path, descr):
+    """Replace ``old`` with a photo that fills the product stage behind it (cropped, rounded)."""
+    stage = next(sh for sh in slide.shapes if sh.name == "Product stage")
+    x, y, w, h = stage.left, stage.top, stage.width, stage.height
+    pic = slide.shapes.add_picture(path, x, y, w, h)
+    iw, ih = Image.open(path).size
+    box, img = w / h, iw / ih
+    if img > box:
+        c = (1 - box / img) / 2
+        pic.crop_left = pic.crop_right = c
+    else:
+        c = (1 - img / box) / 2
+        pic.crop_top = c * 0.6
+        pic.crop_bottom = c * 1.4
+    pic.name = descr
+    pic._element.find(".//" + qn("p:cNvPr")).set("descr", descr)
+    spPr = pic._element.spPr
+    geom = spPr.find(qn("a:prstGeom"))
+    geom.set("prst", "roundRect")
+    av = geom.find(qn("a:avLst"))
+    av.append(el("a:gd", name="adj", fmla="val 3846"))
+    set_effect(spPr, shadow(18, 7, 22))
+    old._element.addprevious(pic._element)
+    old._element.getparent().remove(old._element)
+
+
 def page_title(slide):
     for sh in slide.shapes:
         if sh.name == "Page title":
@@ -445,6 +476,10 @@ def main(src, dst):
 
     # Build openers (appended), then move each before its section.
     openers = [build_opener(prs, first, last, i + 1, contact) for i, (first, last) in enumerate(SECTIONS)]
+    for page, (name, fname, descr) in NEXT_PAGE_PHOTO.items():
+        slide = prs.slides[page - 1]
+        old = next(sh for sh in slide.shapes if sh.shape_type == 13 and sh.name.startswith(name))
+        place_photo(slide, old, os.path.join(PHOTOS, fname), descr)
     for page, (name, (src_page, src_name)) in NEXT_PAGE_SWAP.items():
         target = next(sh for sh in prs.slides[page - 1].shapes if sh.shape_type == 13 and sh.name.startswith(name))
         source = next(sh for sh in prs.slides[src_page - 1].shapes if sh.shape_type == 13 and sh.name.startswith(src_name))

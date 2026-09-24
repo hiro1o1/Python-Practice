@@ -19,8 +19,8 @@ from pptx import Presentation
 sys.path.insert(0, __import__("os").path.dirname(__file__))
 from fix_edges import decontaminate  # noqa: E402
 
-WHITE_BOX = {22: None}          # every white-background picture on these pages
-HAZE = {9: ("Classroom board",)}  # pictures whose names start with these
+WHITE_BOX = {10: None, 11: None, 12: None, 22: None}  # page 19 drawing keeps its frame on purpose
+HAZE = {}  # page 9 boards already cleaned
 
 
 def knock_out_white(rgb, thr=248):

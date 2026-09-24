@@ -293,6 +293,54 @@ def place_photo(slide, old, path, descr):
     old._element.getparent().remove(old._element)
 
 
+PRODUCTION_AFTER = 20  # base page "Factory & Production"
+PRODUCTION = [
+    ("Interactive smartboards", [("factory-smartboards.jpg", "Smartboards on test racks in the factory")]),
+    ("Advertising displays", [("factory-signage-white.jpg", "White floor-standing advertising displays in production"),
+                              ("factory-signage-black.jpg", "Black floor-standing advertising displays in production")]),
+    ("Portable smart TV", [("factory-smarttv-line.jpg", "Portable smart TV production line"),
+                           ("factory-smarttv-office.jpg", "Portable smart TVs ready for dispatch")]),
+]
+
+
+def build_production_page(prs):
+    src = prs.slides[PRODUCTION_AFTER - 1]
+    slide = prs.slides.add_slide(src.slide_layout)
+    for ph in list(slide.placeholders):
+        ph._element.getparent().remove(ph._element)
+    tree = slide.shapes._spTree
+    for sh in src.shapes:
+        if sh.name in ("Running header", "Section label", "Footer", "Page number", "Page title", "Lead"):
+            e = copy.deepcopy(sh._element)
+            tree.append(e)
+    shapes = {sh.name: sh for sh in slide.shapes}
+    shapes["Page title"].text_frame.paragraphs[0].runs[0].text = "Production by Product Line"
+    lead = shapes["Lead"]
+    lead.text_frame.paragraphs[0].runs[0].text = "Photos from our factory floor."
+    for r in lead.text_frame.paragraphs[0].runs[1:]:
+        r._r.getparent().remove(r._r)
+    for p in lead.text_frame.paragraphs[1:]:
+        p._p.getparent().remove(p._p)
+    label_tpl = next(sh for sh in prs.slides[7].shapes if sh.name == "Label")  # "For Meeting Room" (light page)
+    y = 48
+    for title, photos in PRODUCTION:
+        lab = copy.deepcopy(label_tpl._element)
+        lab.find(".//" + qn("a:t")).text = title
+        off = lab.find(".//" + qn("a:off")); ext = lab.find(".//" + qn("a:ext"))
+        off.set("x", str(int(Mm(16)))); off.set("y", str(int(Mm(y))))
+        ext.set("cx", str(int(Mm(178)))); ext.set("cy", str(int(Mm(4))))
+        tree.append(lab)
+        h = 68 if len(photos) == 1 else 58
+        w = 178 if len(photos) == 1 else 86
+        for i, (fname, descr) in enumerate(photos):
+            pic = slide.shapes.add_picture(os.path.join(PHOTOS, fname), Mm(16 + i * 92), Mm(y + 6), Mm(w), Mm(h))
+            pic.name = descr
+            pic._element.find(".//" + qn("p:cNvPr")).set("descr", descr)
+        y += 6 + h + 8
+    restyle_slide(slide, 0, -1, dark=False)
+    return slide
+
+
 def page_title(slide):
     for sh in slide.shapes:
         if sh.name == "Page title":
@@ -476,6 +524,7 @@ def main(src, dst):
 
     # Build openers (appended), then move each before its section.
     openers = [build_opener(prs, first, last, i + 1, contact) for i, (first, last) in enumerate(SECTIONS)]
+    production = build_production_page(prs)
     for page, (name, fname, descr) in NEXT_PAGE_PHOTO.items():
         slide = prs.slides[page - 1]
         old = next(sh for sh in slide.shapes if sh.shape_type == 13 and sh.name.startswith(name))
@@ -492,6 +541,10 @@ def main(src, dst):
         lst.remove(e)
         target = ids[first - 1]
         target.addprevious(e)
+    rid = next(r.rId for r in prs.part.rels.values() if r._target is production.part)
+    e = next(x for x in lst if x.get(qn("r:id")) == rid)
+    lst.remove(e)
+    ids[PRODUCTION_AFTER - 1].addnext(e)
 
     # Final page numbers.
     order = list(prs.slides)
@@ -499,7 +552,7 @@ def main(src, dst):
     old_index = {}  # original page number -> final page number
     k = 0
     for i, s in enumerate(order, 1):
-        if s in openers:
+        if s in openers or s is production:
             continue
         k += 1
         old_index[k] = i

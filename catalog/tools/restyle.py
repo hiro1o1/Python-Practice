@@ -48,8 +48,10 @@ SECTIONS = [(5, 11), (12, 14), (15, 16), (17, 19)]
 CTA_TITLE = "Request a quote or an OEM/ODM version"
 # Opener hero: (page, picture-name prefix) so the opener does not repeat the
 # picture on the page right after it. None = the section's own hero.
-OPENER_HERO = {1: (6, "E5 interactive flat panel display, front"), 2: (14, "Transparent OLED"),
-               3: None, 4: (18, "HS Series product render")}
+OPENER_HERO = {}
+# The page after an opener shows a different picture of the same product, so
+# the opener's hero is not repeated: base page -> (picture to replace, (page, source picture)).
+NEXT_PAGE_SWAP = {17: ("Portable smart Android TV on a mobile", (18, "HS Series product render"))}
 FONT_FILES = [os.path.expanduser("~/.fonts/SegoeUI-Semibold-subset.ttf"),
               os.path.expanduser("~/.fonts/SegoeUI-subset.ttf")]
 
@@ -245,6 +247,21 @@ def text_extent(shape):
     return widest, first_h or Pt(10)
 
 
+def swap_picture(target, source):
+    """Show ``source``'s image in ``target``'s place, fitted into the same box."""
+    rid = target.part.relate_to(source.part.related_part(source._element.blipFill.blip.rEmbed),
+                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
+    target._element.blipFill.blip.set(qn("r:embed"), rid)
+    src = target._element.blipFill.find(qn("a:srcRect"))
+    if src is not None:
+        target._element.blipFill.remove(src)
+    x, y, w, h = target.left, target.top, target.width, target.height
+    s = min(w / source.width, h / source.height)
+    nw, nh = int(source.width * s), int(source.height * s)
+    target.left, target.top, target.width, target.height = x + (w - nw) // 2, y + (h - nh) // 2, nw, nh
+    target.name = source.name
+
+
 def page_title(slide):
     for sh in slide.shapes:
         if sh.name == "Page title":
@@ -428,6 +445,10 @@ def main(src, dst):
 
     # Build openers (appended), then move each before its section.
     openers = [build_opener(prs, first, last, i + 1, contact) for i, (first, last) in enumerate(SECTIONS)]
+    for page, (name, (src_page, src_name)) in NEXT_PAGE_SWAP.items():
+        target = next(sh for sh in prs.slides[page - 1].shapes if sh.shape_type == 13 and sh.name.startswith(name))
+        source = next(sh for sh in prs.slides[src_page - 1].shapes if sh.shape_type == 13 and sh.name.startswith(src_name))
+        swap_picture(target, source)
     lst = prs.slides._sldIdLst
     ids = list(lst)
     for opener, (first, _) in zip(openers, SECTIONS):

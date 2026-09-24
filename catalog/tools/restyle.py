@@ -46,6 +46,12 @@ TERMS = [("USB Type-C", "USB-C"), ("Type-C", "USB-C")]
 # Product lines: first page of each (1-based, before openers are inserted) and its last page.
 SECTIONS = [(5, 11), (12, 14), (15, 16), (17, 19)]
 CTA_TITLE = "Request a quote or an OEM/ODM version"
+# Opener hero: (page, picture-name prefix) so the opener does not repeat the
+# picture on the page right after it. None = the section's own hero.
+OPENER_HERO = {1: (6, "E5 interactive flat panel display, front"), 2: (14, "Transparent OLED"),
+               3: None, 4: (18, "HS Series product render")}
+FONT_FILES = [os.path.expanduser("~/.fonts/SegoeUI-Semibold-subset.ttf"),
+              os.path.expanduser("~/.fonts/SegoeUI-subset.ttf")]
 
 
 # --------------------------------------------------------------------------- xml helpers
@@ -211,6 +217,34 @@ def copy_picture(src_pic, slide, x, y, w, h):
     return el_
 
 
+def text_extent(shape):
+    """(width of the widest line, height of the first line) in EMU."""
+    from PIL import ImageFont
+    widest, first_h = 0, None
+    for p in shape.text_frame.paragraphs:
+        text = "".join(r.text for r in p.runs)
+        if not p.runs:
+            continue
+        rpr = p.runs[0]._r.find(qn("a:rPr"))
+        size = int(rpr.get("sz", "1000")) / 100
+        bold = "Semibold" in (p.runs[0].font.name or "")
+        caps = rpr.get("cap") == "all"
+        spc = int(rpr.get("spc", "0")) / 100
+        if caps:
+            text = text.upper()
+        path = FONT_FILES[0 if bold else 1]
+        try:
+            f = ImageFont.truetype(path, 1000)
+            w_pt = f.getlength(text) / 1000 * size
+        except OSError:
+            w_pt = len(text) * size * 0.56
+        w_pt += spc * len(text)
+        widest = max(widest, min(Pt(w_pt), shape.width))
+        if first_h is None:
+            first_h = Pt(size * 1.33)
+    return widest, first_h or Pt(10)
+
+
 def page_title(slide):
     for sh in slide.shapes:
         if sh.name == "Page title":
@@ -243,8 +277,13 @@ def build_opener(prs, first, last, number, contact):
     add_text(slide, 16, 55, 150, 5, f"Product line {number:02d}", 9, SKY, bold=True, caps=True, spc=120)
     add_text(slide, 16, 61, 178, 16, line_name, 34, "FFFFFF", bold=True)
 
-    hero = max((sh for sh in src.shapes if sh.shape_type == 13 and not sh.name.startswith(("Glow", "Icon"))),
-               key=lambda p: p.width * p.height)
+    spec = OPENER_HERO.get(number)
+    if spec:
+        hero = next(sh for sh in prs.slides[spec[0] - 1].shapes
+                    if sh.shape_type == 13 and sh.name.startswith(spec[1]))
+    else:
+        hero = max((sh for sh in src.shapes if sh.shape_type == 13 and not sh.name.startswith(("Glow", "Icon"))),
+                   key=lambda p: p.width * p.height)
     pic = copy_picture(hero, slide, 16, 92, 178, 118)
     set_effect(pic.find(qn("p:spPr")), shadow(22, 12, 55, "000000"))
 
@@ -313,17 +352,43 @@ def restyle_slide(slide, si, n_slides, dark):
                 if n in MIN_SIZE and 0 < sz < MIN_SIZE[n]:
                     r.set("sz", str(MIN_SIZE[n]))
 
-    # Icons on stat cards.
+    # Icons on stat cards: one row type per page (value line if every card has
+    # room there, else the note line), right-aligned and centred on that line.
     cards = [s for s in shapes if s.name in ("Card", "Fact tile")]
+    texts = [s for s in shapes if s.has_text_frame and s.name in ("Card value", "Fact value", "Card note", "Fact label")]
+    placements = []
     for v in [s for s in shapes if s.name in ("Card value", "Fact value")]:
         t = v.text_frame.text
         icon = "city" if t.strip() == "3" else next((i for k, i in ICON_FOR if k in t), None)
         card = next((c for c in cards if c.left <= v.left < c.left + c.width
                      and c.top <= v.top < c.top + c.height), None)
-        if icon and card is not None:
-            d = Mm(6.5) if card.width > Mm(45) else Mm(5.5)
-            slide.shapes.add_picture(os.path.join(ICONS, icon + ".png"),
-                                     card.left + card.width - d - Mm(3), card.top + Mm(3), d, d).name = f"Icon {icon}"
+        if not icon or card is None:
+            continue
+        inside = [x for x in texts if card.left <= x.left < card.left + card.width
+                  and card.top <= x.top < card.top + card.height]
+        note = next((x for x in inside if x.name in ("Card note", "Fact label")), None)
+        right = card.left + card.width - Mm(3.5)
+        rows = {}
+        for key, row in (("value", v), ("note", note)):
+            if row is not None:
+                w, h = text_extent(row)
+                rows[key] = (right - (row.left + w), row, h)
+        placements.append((icon, right, rows, card.top))
+    d = Mm(5.5)
+    need = d + Mm(2.5)
+    group_key = {}
+    for top in {p[3] for p in placements}:
+        group = [r for _, _, r, t in placements if t == top]
+        options = [k for k in ("value", "note") if all(k in r for r in group)]
+        group_key[top] = next((k for k in options if all(r[k][0] >= need for r in group)),
+                              max(options, key=lambda k: min(r[k][0] for r in group)) if options else None)
+    for icon, right, rows, top in placements:
+        k = group_key[top] or max(rows, key=lambda kk: rows[kk][0])
+        free, row, h = rows[k]
+        size = d if free >= need else max(Mm(4), free - Mm(2))
+        cy = row.top + h / 2
+        pic = slide.shapes.add_picture(os.path.join(ICONS, icon + ".png"), right - size, int(cy - size / 2), size, size)
+        pic.name = f"Icon {icon}"
 
     stage = next((s for s in shapes if s.name == "Product stage"), None)
     if header is not None and stage is not None:

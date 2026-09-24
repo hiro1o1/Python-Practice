@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mainboard Catalog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --ink: #111827; --muted: #5b6472;
+  --line: #e3e6eb; --accent: #2563eb; --chip: #eef2ff; --chip-ink: #1e3a8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1217; --card: #171b22; --ink: #e8ebf0; --muted: #9aa3b2;
+    --line: #2a303b; --accent: #6ea0ff; --chip: #1c2640; --chip-ink: #c7d6ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1217; --card: #171b22; --ink: #e8ebf0; --muted: #9aa3b2;
+  --line: #2a303b; --accent: #6ea0ff; --chip: #1c2640; --chip-ink: #c7d6ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header, main, footer { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 48px; padding-bottom: 8px; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+header p { color: var(--muted); margin: 0; max-width: 60ch; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 8px; }
+nav a { color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--card);
+  padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+nav a:hover { border-color: var(--accent); }
+.board { background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  margin: 24px 0; overflow: hidden; }
+.board-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; padding: 24px 24px 0; }
+.board h2 { font-size: 24px; margin: 0; letter-spacing: -0.01em; }
+.chip { background: var(--chip); color: var(--chip-ink); font-size: 13px; font-weight: 600;
+  padding: 2px 10px; border-radius: 999px; }
+.shot { display: block; margin: 16px 16px 0; background: #fff; border-radius: 12px; overflow: hidden; }
+.shot img { display: block; width: 100%; height: auto; }
+.specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 32px;
+  padding: 20px 24px 8px; }
+.specs h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  margin: 8px 0 6px; font-weight: 600; }
+.specs ul { list-style: none; margin: 0 0 12px; padding: 0; }
+.specs li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0;
+  border-bottom: 1px solid var(--line); font-size: 15px; }
+.specs li span:last-child { color: var(--muted); text-align: right; }
+.qty { color: var(--accent); font-weight: 600; margin-left: 4px; }
+.downloads { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 4px 24px 24px; font-size: 14px; }
+.downloads a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.downloads a:hover { text-decoration: underline; }
+footer { color: var(--muted); font-size: 13px; padding-bottom: 48px; }
+@media (max-width: 600px) {
+  .board-head { padding: 16px 16px 0; }
+  .shot { margin: 12px 8px 0; }
+  .specs { padding: 16px 16px 4px; }
+  .downloads { padding: 4px 16px 16px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mainboard Catalog</h1>
+  <p>Android mainboards for interactive displays and signage. Each board shows its connectors and on-board headers.</p>
+  <nav><a href="#rk3576-a">RK3576 Mainboard A</a><a href="#rk3576-b">RK3576 Mainboard B</a><a href="#rk3588-a">RK3588 Mainboard A</a><a href="#rk3588-b">RK3588 Mainboard B</a></nav>
+</header>
+<main>
+<section class="board" id="rk3576-a">
+  <div class="board-head"><h2>RK3576 Mainboard A</h2><span class="chip">RK3576</span></div>
+  <a class="shot" href="images/rk3576-a.png" title="Open full-resolution image">
+    <img src="images/rk3576-a.webp" alt="RK3576 Mainboard A with labelled connectors" loading="lazy">
+  </a>
+  <div class="specs"><div><h3>Connectors &amp; I/O</h3><ul><li><span>Antennas ANT1–ANT3</span><span>Wi-Fi 2.4/5 GHz ×2 · Bluetooth</span></li><li><span>M.2 Wi-Fi Slot</span><span>Optional</span></li><li><span>V-by-One</span><span></span></li><li><span>OPS</span><span></span></li><li><span>UART6 (TTL)</span><span>Touchscreen UART</span></li><li><span>USB 2.0<span class="qty">×2</span></span><span>Public · USB touch pass-through</span></li><li><span>USB 2.0</span><span>Android · USB touch</span></li><li><span>UART0 (TTL)</span><span>Debug</span></li><li><span>IR Remote</span><span></span></li><li><span>Keypad</span><span></span></li><li><span>LED Indicator</span><span></span></li><li><span>Speaker</span><span>Mid/high range</span></li><li><span>Subwoofer</span><span>Optional</span></li><li><span>GPIO</span><span></span></li><li><span>I²C</span><span></span></li><li><span>Main Power Input</span><span></span></li><li><span>Audio Header</span><span></span></li><li><span>S/PDIF Out</span><span></span></li><li><span>UART8 (RS-232)</span><span></span></li><li><span>Front Panel</span><span>Connector</span></li><li><span>USB Type-B Out</span><span>Touch pass-through</span></li><li><span>HDMI In</span><span></span></li><li><span>HDMI Out</span><span></span></li><li><span>USB-C OTG</span><span></span></li><li><span>USB 3.0</span><span>Android</span></li><li><span>USB 2.0</span><span>Android</span></li><li><span>USB 2.0</span><span>Public</span></li><li><span>RJ45 Ethernet</span><span></span></li><li><span>Line Out</span><span></span></li><li><span>Line In</span><span></span></li></ul></div><div><h3>On-board headers</h3><ul><li><span>RTC Battery</span><span></span></li><li><span>USB Expansion</span><span></span></li><li><span>Backlight</span><span>Optional</span></li><li><span>External Wi-Fi Header</span><span></span></li><li><span>Power Header</span><span>Optional</span></li><li><span>USB Header</span><span>Optional</span></li><li><span>UART Header</span><span>Optional</span></li><li><span>USB Header</span><span>Android · optional</span></li><li><span>USB Header</span><span>Public · optional</span></li></ul></div></div>
+  <div class="downloads">
+    <a href="images/rk3576-a.png" download>Labelled image (PNG)</a>
+    <a href="images/rk3576-a-plain.png" download>Board only, no labels (PNG)</a>
+  </div>
+</section>
+<section class="board" id="rk3576-b">
+  <div class="board-head"><h2>RK3576 Mainboard B</h2><span class="chip">RK3576</span></div>
+  <a class="shot" href="images/rk3576-b.png" title="Open full-resolution image">
+    <img src="images/rk3576-b.webp" alt="RK3576 Mainboard B with labelled connectors" loading="lazy">
+  </a>
+  <div class="specs"><div><h3>Connectors &amp; I/O</h3><ul><li><span>Antennas ANT1–ANT7</span><span>ANT1, ANT3, ANT7 optional</span></li><li><span>V-by-One</span><span></span></li><li><span>OPS</span><span></span></li><li><span>USB 3.0</span><span>Android</span></li><li><span>S/PDIF Out</span><span></span></li><li><span>M.2 Wi-Fi Slot</span><span>Optional</span></li><li><span>RS-232</span><span></span></li><li><span>USB Type-B Out</span><span>Touch pass-through</span></li><li><span>VGA Audio In</span><span></span></li><li><span>VGA In</span><span></span></li><li><span>Fast-Charge Power</span><span>Connector</span></li><li><span>DisplayPort In</span><span></span></li><li><span>USB-C OTG</span><span>65 W fast charge · DP In</span></li><li><span>Front Panel</span><span>Connector</span></li><li><span>USB 2.0<span class="qty">×2</span></span><span>Public</span></li><li><span>UART6</span><span></span></li><li><span>USB 2.0<span class="qty">×3</span></span><span>Android</span></li><li><span>IR Remote</span><span></span></li><li><span>Keypad</span><span></span></li><li><span>LED Indicator</span><span></span></li><li><span>I²C</span><span></span></li><li><span>GPIO</span><span></span></li><li><span>Speaker</span><span></span></li><li><span>Subwoofer</span><span></span></li><li><span>Subwoofer</span><span>Optional</span></li><li><span>Main Power Input</span><span></span></li><li><span>Audio Header</span><span></span></li><li><span>HDMI In 1</span><span></span></li><li><span>HDMI In 2</span><span></span></li><li><span>USB Type-B</span><span>Touch out</span></li><li><span>HDMI Out</span><span></span></li><li><span>USB 3.0<span class="qty">×2</span></span><span>Public</span></li><li><span>Recovery</span><span>Button</span></li><li><span>Ethernet 1</span><span>RJ45</span></li><li><span>Ethernet 2</span><span>RJ45 · optional</span></li><li><span>Line Out</span><span></span></li><li><span>Line In</span><span></span></li><li><span>microSD</span><span>Optional</span></li></ul></div><div><h3>On-board headers</h3><ul><li><span>Backlight</span><span>Optional</span></li><li><span>USB Expansion</span><span>Optional</span></li><li><span>USB / UART Header</span><span>Optional</span></li><li><span>RTC Battery</span><span></span></li><li><span>RS-485</span><span>Optional</span></li><li><span>UART9</span><span>Optional</span></li><li><span>UART0</span><span>Optional</span></li></ul></div></div>
+  <div class="downloads">
+    <a href="images/rk3576-b.png" download>Labelled image (PNG)</a>
+    <a href="images/rk3576-b-plain.png" download>Board only, no labels (PNG)</a>
+  </div>
+</section>
+<section class="board" id="rk3588-a">
+  <div class="board-head"><h2>RK3588 Mainboard A</h2><span class="chip">RK3588</span></div>
+  <a class="shot" href="images/rk3588-a.png" title="Open full-resolution image">
+    <img src="images/rk3588-a.webp" alt="RK3588 Mainboard A with labelled connectors" loading="lazy">
+  </a>
+  <div class="specs"><div><h3>Connectors &amp; I/O</h3><ul><li><span>Headphone Out</span><span></span></li><li><span>Mic In</span><span></span></li><li><span>S/PDIF Out</span><span>Coaxial</span></li><li><span>RS-232</span><span></span></li><li><span>USB Type-B</span><span>Touch out</span></li><li><span>HDMI In</span><span></span></li><li><span>HDMI Out</span><span></span></li><li><span>RJ45 Ethernet</span><span></span></li><li><span>USB Type-C</span><span></span></li><li><span>USB 2.0</span><span>Android</span></li><li><span>USB Host</span><span>USB-A</span></li><li><span>microSD Card</span><span></span></li><li><span>USB 2.0</span><span>Public</span></li></ul></div></div>
+  <div class="downloads">
+    <a href="images/rk3588-a.png" download>Labelled image (PNG)</a>
+    <a href="images/rk3588-a-plain.png" download>Board only, no labels (PNG)</a>
+  </div>
+</section>
+<section class="board" id="rk3588-b">
+  <div class="board-head"><h2>RK3588 Mainboard B</h2><span class="chip">RK3588</span></div>
+  <a class="shot" href="images/rk3588-b.png" title="Open full-resolution image">
+    <img src="images/rk3588-b.webp" alt="RK3588 Mainboard B with labelled connectors" loading="lazy">
+  </a>
+  <div class="specs"><div><h3>Connectors &amp; I/O</h3><ul><li><span>RJ45 Ethernet</span><span>Port 1</span></li><li><span>RJ45 Ethernet</span><span>Port 2</span></li><li><span>Headphone Out</span><span></span></li><li><span>Mic In</span><span></span></li><li><span>S/PDIF Out</span><span>Coaxial</span></li><li><span>HDMI Out</span><span></span></li><li><span>USB Type-B</span><span>Touch out</span></li><li><span>VGA Audio In</span><span></span></li><li><span>VGA In</span><span></span></li><li><span>RS-232</span><span></span></li><li><span>HDMI In 3</span><span></span></li><li><span>USB Type-B</span><span>Touch for HDMI In 3</span></li><li><span>HDMI In 2</span><span></span></li><li><span>USB Type-B</span><span>Touch for HDMI In 2</span></li><li><span>HDMI In 1</span><span></span></li><li><span>USB Type-B</span><span>Touch for HDMI In 1</span></li><li><span>DisplayPort In</span><span></span></li><li><span>USB Type-C In</span><span></span></li><li><span>USB 3.0<span class="qty">×2</span></span><span>Android</span></li><li><span>USB 2.0<span class="qty">×4</span></span><span>Public</span></li><li><span>microSD Card</span><span></span></li><li><span>USB Touch</span><span>Touch out</span></li></ul></div></div>
+  <div class="downloads">
+    <a href="images/rk3588-b.png" download>Labelled image (PNG)</a>
+    <a href="images/rk3588-b-plain.png" download>Board only, no labels (PNG)</a>
+  </div>
+</section>
+</main>
+<footer>Images generated by <code>catalog/tools/build.py</code>. Edit labels in <code>catalog/tools/boards.py</code> and rebuild.</footer>
+</body>
+</html>

@@ -608,7 +608,7 @@ def main(src, dst):
     prs = Presentation(src)
     n0 = len(prs.slides)
     contact_slide = prs.slides[n0 - 1]
-    phone = next(sh.text_frame.text for sh in contact_slide.shapes if sh.name == "Phone").split("\n")[0]
+    phone = "+86 199 2644 2018"
     email = next(sh.text_frame.text for sh in contact_slide.shapes if sh.name.startswith("Email")).split("\n")[0] \
         if any(sh.name.startswith("Email") for sh in contact_slide.shapes) else "Admin@xyc-ltd.com"
     contact = f"{email.strip()}  ·  {phone.strip()}"
